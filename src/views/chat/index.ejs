@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🤖</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">🤖</div>
+        <div>
+          <div class="brand-name">Support Bot</div>
+          <div class="brand-sub">Powered by Grok AI</div>
+        </div>
+      </div>
+    </div>
+
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Navigation</div>
+      <a href="/" class="nav-item active">
+        <span class="nav-icon">💬</span> Chat Support
+      </a>
+      <a href="/admin" class="nav-item">
+        <span class="nav-icon">🛠️</span> Admin Dashboard
+      </a>
+
+      <div class="nav-section-title" style="margin-top:16px">Quick Actions</div>
+      <div class="nav-item" onclick="document.getElementById('messageInput').value='Track my order ORD-1001'; document.getElementById('messageInput').dispatchEvent(new Event('input'))">
+        <span class="nav-icon">📦</span> Track Order
+      </div>
+      <div class="nav-item" onclick="document.getElementById('messageInput').value='What is your return policy?'; document.getElementById('messageInput').dispatchEvent(new Event('input'))">
+        <span class="nav-icon">↩️</span> Return Policy
+      </div>
+      <div class="nav-item" onclick="document.getElementById('messageInput').value='I want a refund for order ORD-1004'; document.getElementById('messageInput').dispatchEvent(new Event('input'))">
+        <span class="nav-icon">💸</span> Request Refund
+      </div>
+
+      <div class="nav-section-title" style="margin-top:16px">Sample Orders</div>
+      <% const sampleOrders = [
+        { id: 'ORD-1001', label: 'Shipped', emoji: '🚚' },
+        { id: 'ORD-1002', label: 'Processing', emoji: '⏳' },
+        { id: 'ORD-1003', label: 'Delivered', emoji: '✅' },
+        { id: 'ORD-1004', label: 'Cancelled', emoji: '❌' },
+        { id: 'ORD-1005', label: 'Out for Delivery', emoji: '🛵' }
+      ] %>
+      <% sampleOrders.forEach(o => { %>
+        <div class="nav-item" style="cursor:pointer" onclick="fillOrderQuery('<%= o.id %>')">
+          <span class="nav-icon"><%= o.emoji %></span>
+          <span><%= o.id %></span>
+          <span class="nav-badge green" style="font-size:0.58rem;padding:1px 5px"><%= o.label %></span>
+        </div>
+      <% }) %>
+    </nav>
+  </aside>
+
+  <!-- ── Main Chat ─────────────────────────────────────────── -->
+  <main class="main-content">
+    <div class="chat-container">
+
+      <!-- Chat Header -->
+      <div class="chat-header">
+        <div class="chat-avatar">
+          🤖
+          <div class="status-dot"></div>
+        </div>
+        <div class="chat-info">
+          <div class="name">AI Support Agent</div>
+          <div class="status">● Online — typically replies instantly</div>
+        </div>
+        <div class="chat-actions">
+          <span id="sessionBadge" style="font-size:0.68rem;color:var(--text-muted);font-family:'Space Mono',monospace;background:var(--bg-input);padding:4px 10px;border-radius:20px;border:1px solid var(--border)"></span>
+          <button class="btn btn-ghost" onclick="clearChat()" title="Clear chat">🗑️</button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="messages-area" id="messagesArea">
+        <!-- Welcome message -->
+        <div class="message-row bot">
+          <div class="bubble bot">
+            <div class="bubble-text">
+              👋 <strong>Hello! I'm your AI Support Assistant.</strong><br><br>
+              I can help you with:<br>
+              📦 <strong>Order tracking</strong> — just share your order ID<br>
+              ↩️ <strong>Returns & exchanges</strong> — I'll explain the process<br>
+              💸 <strong>Refund requests</strong> — I'll escalate to an agent<br>
+              ❓ <strong>General queries</strong> — ask me anything!
+            </div>
+            <div class="bubble-time"><%= new Date().toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'}) %></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Input Area -->
+      <div class="chat-input-area">
+        <div class="quick-replies">
+          <button class="quick-btn" data-msg="Where is my order ORD-1001?">📦 Track ORD-1001</button>
+          <button class="quick-btn" data-msg="What is your return policy?">↩️ Return Policy</button>
+          <button class="quick-btn" data-msg="I want to return my order ORD-1003">🔄 Request Return</button>
+          <button class="quick-btn" data-msg="Refund for cancelled order ORD-1004">💸 Refund ORD-1004</button>
+        </div>
+
+        <div class="input-row">
+          <div class="input-wrap">
+            <span style="color:var(--text-muted);font-size:1rem">😊</span>
+            <textarea
+              id="messageInput"
+              placeholder="Type a message…"
+              rows="1"
+              autocomplete="off"
+            ></textarea>
+            <span style="color:var(--text-muted);font-size:0.9rem">📎</span>
+          </div>
+          <button class="send-btn" id="sendBtn" title="Send message">
+            ➤
+          </button>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script>
+  function fillOrderQuery(orderId) {
+    const input = document.getElementById('messageInput');
+    input.value = `What is the status of my order ${orderId}?`;
+    input.dispatchEvent(new Event('input'));
+    input.focus();
+  }
+  function clearChat() {
+    const area = document.getElementById('messagesArea');
+    area.innerHTML = '<div class="message-row system"><div class="bubble system-msg">Chat cleared — starting new conversation</div></div>';
+    localStorage.removeItem('wa_bot_session');
+    location.reload();
+  }
+</script>
+<script src="/js/chat.js"></script>
+</body>
+</html>

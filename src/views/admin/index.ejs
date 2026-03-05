@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title><%= title %></title>
+  <link rel="stylesheet" href="/css/main.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🛠️</text></svg>">
+</head>
+<body>
+
+<div class="app-layout">
+
+  <!-- ── Sidebar ──────────────────────────────────────────── -->
+  <aside class="sidebar">
+    <div class="sidebar-header">
+      <div class="brand">
+        <div class="brand-icon">🛠️</div>
+        <div>
+          <div class="brand-name">Admin Panel</div>
+          <div class="brand-sub">AI Support Bot Dashboard</div>
+        </div>
+      </div>
+    </div>
+    <nav class="sidebar-nav">
+      <div class="nav-section-title">Navigation</div>
+      <a href="/" class="nav-item">
+        <span class="nav-icon">💬</span> Chat Support
+      </a>
+      <a href="/admin" class="nav-item active">
+        <span class="nav-icon">🛠️</span> Admin Dashboard
+      </a>
+
+      <div class="nav-section-title" style="margin-top:16px">Dashboard Sections</div>
+      <div class="nav-item" onclick="document.querySelector('[data-tab=overview]').click()">
+        <span class="nav-icon">📊</span> Overview
+      </div>
+      <div class="nav-item" onclick="document.querySelector('[data-tab=escalations]').click()">
+        <span class="nav-icon">🚨</span> Escalations
+        <% if (stats.openEscalations > 0) { %>
+          <span class="nav-badge"><%= stats.openEscalations %></span>
+        <% } %>
+      </div>
+      <div class="nav-item" onclick="document.querySelector('[data-tab=conversations]').click()">
+        <span class="nav-icon">💬</span> Conversations
+      </div>
+      <div class="nav-item" onclick="document.querySelector('[data-tab=orders]').click()">
+        <span class="nav-icon">📦</span> Orders DB
+      </div>
+      <div class="nav-item" onclick="document.querySelector('[data-tab=logs]').click()">
+        <span class="nav-icon">📋</span> AI Logs
+      </div>
+    </nav>
+  </aside>
+
+  <!-- ── Admin Content ──────────────────────────────────────── -->
+  <main class="main-content">
+    <div class="admin-content">
+
+      <div class="page-title">Admin Dashboard</div>
+      <div class="page-sub">Monitor AI interactions, escalations, and order data in real-time</div>
+
+      <!-- ── Tabs ─────────────────────────────────────────── -->
+      <div class="tabs">
+        <button class="tab-btn" data-tab="overview">📊 Overview</button>
+        <button class="tab-btn" data-tab="escalations">
+          🚨 Escalations
+          <% if (stats.openEscalations > 0) { %>
+            <span class="nav-badge"><%= stats.openEscalations %></span>
+          <% } %>
+        </button>
+        <button class="tab-btn" data-tab="conversations">💬 Conversations</button>
+        <button class="tab-btn" data-tab="orders">📦 Orders</button>
+        <button class="tab-btn" data-tab="logs">📋 Logs</button>
+      </div>
+
+      <!-- ══════════ TAB: Overview ═══════════ -->
+      <div id="tab-overview" class="tab-pane">
+
+        <!-- Stats Grid -->
+        <div class="stats-grid">
+          <div class="stat-card">
+            <div class="stat-icon">💬</div>
+            <div class="stat-value" id="stat-convos"><%= stats.totalConvos %></div>
+            <div class="stat-label">Total Conversations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🚨</div>
+            <div class="stat-value" id="stat-escalations"><%= stats.escalations %></div>
+            <div class="stat-label">Total Escalations</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">🔴</div>
+            <div class="stat-value" id="stat-open"><%= stats.openEscalations %></div>
+            <div class="stat-label">Open Tickets</div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon">📦</div>
+            <div class="stat-value" id="stat-orders"><%= stats.totalOrders %></div>
+            <div class="stat-label">Orders in DB</div>
+          </div>
+        </div>
+
+        <!-- Intent breakdown -->
+        <div class="data-table-wrap">
+          <div class="table-header">
+            <h3>Intent Distribution</h3>
+          </div>
+          <% const intents = stats.intents || {} %>
+          <% if (Object.keys(intents).length === 0) { %>
+            <div class="empty-state">
+              <div class="icon">📊</div>
+              <p>No conversations yet. Start chatting to see intent analytics.</p>
+            </div>
+          <% } else { %>
+            <table>
+              <thead><tr><th>Intent</th><th>Count</th><th>Visual</th></tr></thead>
+              <tbody>
+                <% const total = Object.values(intents).reduce((a,b)=>a+b,0) %>
+                <% Object.entries(intents).sort((a,b)=>b[1]-a[1]).forEach(([intent, count]) => { %>
+                  <tr>
+                    <td class="td-primary"><%= intent.replace(/_/g,' ') %></td>
+                    <td><%= count %></td>
+                    <td>
+                      <div style="height:6px;background:var(--bg-input);border-radius:4px;width:200px;overflow:hidden">
+                        <div style="height:100%;background:var(--green-primary);border-radius:4px;width:<%= Math.round(count/total*100) %>%"></div>
+                      </div>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB: Escalations ═══════════ -->
+      <div id="tab-escalations" class="tab-pane" style="display:none">
+        <div class="data-table-wrap">
+          <div class="table-header">
+            <h3>🚨 Escalation Tickets</h3>
+            <span class="table-count"><%= escalations.length %> total</span>
+          </div>
+          <% if (escalations.length === 0) { %>
+            <div class="empty-state">
+              <div class="icon">✅</div>
+              <p>No escalations yet — all conversations resolved by AI!</p>
+            </div>
+          <% } else { %>
+            <table>
+              <thead>
+                <tr>
+                  <th>Ticket #</th>
+                  <th>Priority</th>
+                  <th>Intent</th>
+                  <th>Order</th>
+                  <th>Created</th>
+                  <th>Status</th>
+                  <th>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% escalations.forEach(e => { %>
+                  <tr>
+                    <td class="td-primary mono"><%= e.ticketNumber %></td>
+                    <td>
+                      <% if (e.priority === 'high') { %>
+                        <span class="badge badge-red">🔴 High</span>
+                      <% } else if (e.priority === 'medium') { %>
+                        <span class="badge badge-amber">🟡 Medium</span>
+                      <% } else { %>
+                        <span class="badge badge-gray">🟢 Low</span>
+                      <% } %>
+                    </td>
+                    <td><span class="badge badge-blue"><%= e.intent?.replace(/_/g,' ') || 'general' %></span></td>
+                    <td><%= e.orderId ? `<span class="mono">${e.orderId}</span>` : '—' %></td>
+                    <td><%= new Date(e.createdAt).toLocaleString() %></td>
+                    <td>
+                      <% if (e.status === 'open') { %>
+                        <span class="badge badge-amber">Open</span>
+                      <% } else { %>
+                        <span class="badge badge-green">✓ Resolved</span>
+                      <% } %>
+                    </td>
+                    <td>
+                      <% if (e.status === 'open') { %>
+                        <button class="btn btn-primary" style="font-size:0.72rem;padding:5px 10px" data-resolve="<%= e.id %>">Resolve</button>
+                      <% } else { %>
+                        <span style="color:var(--text-muted);font-size:0.72rem"><%= new Date(e.resolvedAt).toLocaleTimeString() %></span>
+                      <% } %>
+                    </td>
+                  </tr>
+                  <!-- Issue text row -->
+                  <tr style="background:rgba(255,255,255,0.01)">
+                    <td colspan="7" style="padding:6px 16px 10px;color:var(--text-muted);font-size:0.75rem;border-bottom:1px solid rgba(255,255,255,0.04)">
+                      <strong>Issue:</strong> <%= e.issue?.substring(0, 200) || '—' %>
+                    </td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB: Conversations ═══════════ -->
+      <div id="tab-conversations" class="tab-pane" style="display:none">
+        <div class="data-table-wrap">
+          <div class="table-header">
+            <h3>💬 Recent Conversations</h3>
+            <span class="table-count">Last 20 messages</span>
+          </div>
+          <% if (conversations.length === 0) { %>
+            <div class="empty-state">
+              <div class="icon">💬</div>
+              <p>No conversations logged yet.</p>
+            </div>
+          <% } else { %>
+            <table>
+              <thead>
+                <tr>
+                  <th>Time</th>
+                  <th>User Message</th>
+                  <th>AI Reply</th>
+                  <th>Intent</th>
+                  <th>Sentiment</th>
+                  <th>Escalated</th>
+                  <th>Duration</th>
+                </tr>
+              </thead>
+              <tbody>
+                <% conversations.forEach(c => { %>
+                  <tr>
+                    <td style="font-size:0.7rem;color:var(--text-muted);white-space:nowrap"><%= new Date(c.timestamp).toLocaleTimeString() %></td>
+                    <td class="td-primary" style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="<%= c.userMessage %>">
+                      <%= c.userMessage?.substring(0, 60) %><% if (c.userMessage?.length > 60) { %>…<% } %>
+                    </td>
+                    <td style="max-width:200px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--text-secondary)" title="<%= c.aiMessage %>">
+                      <%= c.aiMessage?.substring(0, 60) %><% if (c.aiMessage?.length > 60) { %>…<% } %>
+                    </td>
+                    <td><span class="badge badge-blue"><%= c.intent?.replace(/_/g,' ') || '—' %></span></td>
+                    <td>
+                      <% if (c.sentiment === 'positive') { %>
+                        <span class="badge badge-green">😊</span>
+                      <% } else if (c.sentiment === 'negative') { %>
+                        <span class="badge badge-red">😟</span>
+                      <% } else { %>
+                        <span class="badge badge-gray">😐</span>
+                      <% } %>
+                    </td>
+                    <td><%= c.escalate ? '<span class="badge badge-red">🚨 Yes</span>' : '<span class="badge badge-gray">No</span>' %></td>
+                    <td style="font-family:'Space Mono',monospace;font-size:0.7rem;color:var(--text-muted)"><%= c.durationMs ? c.durationMs + 'ms' : '—' %></td>
+                  </tr>
+                <% }) %>
+              </tbody>
+            </table>
+          <% } %>
+        </div>
+      </div>
+
+      <!-- ══════════ TAB: Orders ═══════════ -->
+      <div id="tab-orders" class="tab-pane" style="display:none">
+        <div class="data-table-wrap">
+          <div class="table-header">
+            <h3>📦 Orders Database</h3>
+            <a href="/admin/api/orders" target="_blank" class="btn btn-ghost" style="font-size:0.72rem">View JSON ↗</a>
+          </div>
+          <table>
+            <thead>
+              <tr>
+                <th>Order ID</th>
+                <th>Customer</th>
+                <th>Items</th>
+                <th>Total</th>
+                <th>Status</th>
+                <th>Courier</th>
+                <th>Placed</th>
+                <th>Payment</th>
+              </tr>
+            </thead>
+            <tbody>
+              <% const statusBadge = {
+                processing: 'badge-amber',
+                shipped: 'badge-blue',
+                out_for_delivery: 'badge-blue',
+                delivered: 'badge-green',
+                cancelled: 'badge-red',
+                returned: 'badge-gray',
+                refunded: 'badge-gray'
+              } %>
+              <% const statusEmoji = {
+                processing: '⏳', shipped: '🚚', out_for_delivery: '🛵',
+                delivered: '✅', cancelled: '❌', returned: '↩️', refunded: '💰'
+              } %>
+              <% const orders = [] /* will be loaded from API */ %>
+            </tbody>
+          </table>
+          <!-- Loaded via JS -->
+          <div id="ordersTableBody"></div>
+        </div>
+        <script>
+          (async function loadOrders() {
+            const res = await fetch('/admin/api/orders');
+            const { data } = await res.json();
+            const tbl = document.querySelector('#tab-orders tbody');
+            tbl.innerHTML = data.map(o => {
+              const statusColors = {
+                processing: 'badge-amber', shipped: 'badge-blue',
+                out_for_delivery: 'badge-blue', delivered: 'badge-green',
+                cancelled: 'badge-red'
+              };
+              const emojis = {
+                processing: '⏳', shipped: '🚚', out_for_delivery: '🛵',
+                delivered: '✅', cancelled: '❌'
+              };
+              const cls = statusColors[o.status] || 'badge-gray';
+              const em  = emojis[o.status] || '📦';
+              const items = o.items.map(i => `${i.qty}× ${i.name}`).join(', ');
+              return `<tr>
+                <td class="td-primary mono">${o.id}</td>
+                <td>${o.customer}</td>
+                <td style="font-size:0.75rem;color:var(--text-secondary)">${items}</td>
+                <td class="mono" style="color:var(--green-primary)">PKR ${o.total.toLocaleString()}</td>
+                <td><span class="badge ${cls}">${em} ${o.status.replace(/_/g,' ')}</span></td>
+                <td style="color:var(--text-muted)">${o.courier || '—'}</td>
+                <td style="font-size:0.72rem;color:var(--text-muted)">${o.placedAt}</td>
+                <td><span class="badge badge-gray">${o.paymentMethod}</span></td>
+              </tr>`;
+            }).join('');
+          })();
+        </script>
+      </div>
+
+      <!-- ══════════ TAB: Logs ═══════════ -->
+      <div id="tab-logs" class="tab-pane" style="display:none">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+          <div>
+            <h3 style="font-size:0.95rem;font-weight:600">📋 AI Prompt & Request Logs</h3>
+            <p style="font-size:0.75rem;color:var(--text-muted);margin-top:3px">All HTTP requests and AI interactions are logged here</p>
+          </div>
+          <button class="btn btn-primary" id="loadLogsBtn">↻ Refresh Logs</button>
+        </div>
+        <div class="log-viewer" id="logViewer">Loading logs…</div>
+
+        <div style="margin-top:16px">
+          <a href="/admin/api/logs" target="_blank" class="btn btn-ghost">View raw JSON ↗</a>
+          <a href="/admin/api/conversations" target="_blank" class="btn btn-ghost" style="margin-left:8px">Conversations JSON ↗</a>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<script src="/js/admin.js"></script>
+</body>
+</html>
