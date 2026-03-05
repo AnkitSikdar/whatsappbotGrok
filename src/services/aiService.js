@@ -55,15 +55,17 @@ async function processMessage({ userMessage, sessionId, orderContext = null, con
     contextualMessage = `[ORDER CONTEXT: ${JSON.stringify(orderContext)}]\n\nCustomer message: ${userMessage}`;
   }
 
+  // ── OpenAI-compatible format (works with Groq + xAI Grok) ───
+  // System prompt goes INSIDE messages array as first entry
   const messages = [
+    { role: 'system', content: SYSTEM_PROMPT + '\n\n' + RETURN_POLICY },
     ...conversationHistory.slice(-6),
     { role: 'user', content: contextualMessage }
   ];
 
   const payload = {
-    model: GROK_MODEL,
+    model:      GROK_MODEL,
     max_tokens: MAX_TOKENS,
-    system: SYSTEM_PROMPT + '\n\n' + RETURN_POLICY,
     messages
   };
 
@@ -104,7 +106,7 @@ async function processMessage({ userMessage, sessionId, orderContext = null, con
       requestId,
       sessionId,
       prompt: {
-        system:   payload.system,
+        system:   SYSTEM_PROMPT,
         messages: payload.messages,
         model:    GROK_MODEL
       },
@@ -121,7 +123,12 @@ async function processMessage({ userMessage, sessionId, orderContext = null, con
   } catch (err) {
     const durationMs = Date.now() - startTime;
 
-    // Log the error
+    // Print full error to terminal for debugging
+    console.error('[AI] API call failed:');
+    console.error('  Status :', err.response?.status);
+    console.error('  Message:', err.response?.data?.error?.message || err.message);
+
+    // Log the error to MongoDB
     await Log.create({
       type: 'ai_request',
       requestId,
